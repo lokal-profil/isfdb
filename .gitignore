@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# build / distribution directories
+build/
+dist/
+*.egg-info/
+
+# various
+*.log
+*.backup
+.tox/
+.coverage
+
+# isfdb specific files
+.credentials.json
