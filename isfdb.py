@@ -14,7 +14,16 @@ HEADERS = {
 }
 CREDENTIALS = {}
 
+# @TODO: Set up a class IsfdSession which takes the user agent (or parts
+# thereof), max submissions = 20, stores browser (to avoid re-login), sets dry
+# stores credentials...
+# Add a get_pending_edits_number
+# Add mechanism for closing session and killing browser
 
+
+# if adding optional password then validation needs to change as does passing
+# credentials straight to make_submission
+# can then use more sane credentials labels
 def _load_credentials():
     global CREDENTIALS
     if not CREDENTIALS:
@@ -34,6 +43,15 @@ def get_xml_data_by_extid(extid_type, extid):
     return r
 
 
+def get_xml_data_by_record_id(record_id):
+    """."""
+    url = '{0}/cgi-bin/rest/getpub_by_internal_ID.cgi?{1}'.format(
+        HOST, record_id)
+    r = requests.get(url, headers=HEADERS)
+    return r
+
+
+# add holder support - class variable
 def make_submission(submission_type, data, subject, mod_note, dry=True):
     """
     data is dict, subject is string, submissionType is string.
@@ -67,10 +85,11 @@ def parse_submission_result(r):
 
 
 def xml_encode(payload):
-    """."""
+    """Encode dict as xml with the appropriate encoding."""
     return xmltodict.unparse(payload, encoding='iso-8859-1', pretty=True)
 
 
+# add holder support
 def update_publication(old_data, update, mod_note):
     """
     Can make this only support additions for now?
@@ -140,11 +159,13 @@ def add_librisxl_id(libris_id):
     return update_publication(old_data, update, mod_note)
 
 
+# drop
 def test():
     add_librisxl_id(7245873)
     # print(json.dumps(get_libris_data(7245873), indent=4))
 
 
+# drop
 if __name__ == "__main__":
     test()
 
