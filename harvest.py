@@ -4,17 +4,22 @@ Harvest items needing librisxl id.
 """
 from bs4 import BeautifulSoup
 import requests
+# import isfdb
 
 HOST = 'http://www.isfdb.org'
 MISSING_LIBRISXL_REPORT = 300
 
+# rename file something with libris
 
+
+# move to isfdb.py - replaced by get_xml_data_by_record_id()
 def _get_record_page(record_id):
     url = '{0}/cgi-bin/pl.cgi?{1}'.format(HOST, record_id)
     r = requests.get(url)
     return r.content
 
 
+# largely replaced by replaced by get_xml_data_by_record_id()
 def find_libris_id(record_id):
     ext_ids = None
     soup = BeautifulSoup(_get_record_page(record_id), features='html5lib')
@@ -32,15 +37,7 @@ def find_libris_id(record_id):
     return libris_id
 
 
-def _load_cleanup_report_from_file(report_id):
-    # filename = 'cleanup_report_{}.html'.format(report_id)
-    # with open(filename, encoding='iso-8859-1') as f:
-    # copy pasting source worked better than trying to save the page, unclear why
-    filename = 'cleanup_report_{}_paste.html'.format(report_id)
-    with open(filename) as f:
-        return f.read()
-
-
+# move to isfdb
 def _get_cleanup_report(report_id):
     browser = log_in()
     url = '{0}/cgi-bin/edit/cleanup_report.cgi?{1}'.format(HOST, report_id)
@@ -48,10 +45,19 @@ def _get_cleanup_report(report_id):
     return browser.page_source
 
 
-def log_in(username, password):
+# move to isfdb
+# load username and password from credentials but allow getting password from
+# `from getpass import getpass \n password = getpass()`
+# to run headless (if debug=False) see https://stackoverflow.com/questions/46753393
+# Note that you may need browser.implicitly_wait(XSECONDS)
+def log_in(username=None, password=None):
     # this should set some sort of flag about us being logged in
+    if not username:
+        username = input('Username: ')
+    if not password:
+        from getpass import getpass
+        password = getpass()
     from selenium import webdriver
-    from selenium.webdriver.support.ui import WebDriverWait
     # required geckodriver
     browser = webdriver.Firefox()
     # load login page
@@ -61,38 +67,51 @@ def log_in(username, password):
     browser.find_element_by_name('password').send_keys(password)
     browser.find_element_by_xpath("//input[@value='submit']").click()
     # wait for login to complete
-    WebDriverWait(driver=browser, timeout=10).until(
-        lambda x: x.execute_script(
-            "return document.readyState === 'complete'"))
-    # verify success
+    browser.implicitly_wait(3)
     result = (
         browser.find_element_by_id('statusbar')
-        .find_element_by_tag_name('h2'))
-    if result.text.startswith('Login failed'):
+        .find_element_by_tag_name('h2')
+        .text)
+    if result.lower().startswith('login failed'):
         msg = (
             browser.find_element_by_id('main2')
-            .find_element_by_tag_name('h2'))
-        raise Exception(msg.text)
+            .find_element_by_tag_name('h2')
+            .text)
+        browser.quit()
+        raise Exception(msg)  # @todo: find more appropriate exception
     else:
         return browser
 
 
+# make generic by returning [(cols), ] or OrderedList({col_label: col_value})?
+# would then have to run soup on each row though
+# For this one return [ (id, name), ]
 def harvest_records_from_cleanup_report(max=5):
     count = 0
-    records = {}
+    records = []
     soup = BeautifulSoup(
-        _load_cleanup_report_from_file(MISSING_LIBRISXL_REPORT),
+        _get_cleanup_report(MISSING_LIBRISXL_REPORT),
         features='html5lib')
     for link in soup.find(id='main2').find_all('a'):
         record_id = link.get('href').split('?')[1]
         libris_id = find_libris_id(record_id)
-        records[record_id] = libris_id
+        records.append((libris_id, link.text))
         count += 1
         if count >= max:
             break
     print('Found {0} records.'.format(len(records)))
-    for k, v in records.items():
-        print('{0}\t{1}'.format(k, v))
+    # temp for debug
+    for id, name in records:
+        print('{0}\t{1}'.format(id, name))
+    return records
 
 
-# find_libris_id(669460)
+# drop
+def test():
+    # find_libris_id(669460)
+    harvest_records_from_cleanup_report()
+
+
+# drop
+if __name__ == "__main__":
+    test()
