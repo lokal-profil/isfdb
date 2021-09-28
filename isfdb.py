@@ -7,6 +7,8 @@ import json
 
 import requests
 import xmltodict
+from xml.parsers.expat import ExpatError as XmlParseError
+
 
 HOST = 'http://www.isfdb.org'
 HEADERS = {
@@ -35,20 +37,30 @@ def _load_credentials():
     return CREDENTIALS
 
 
-def get_xml_data_by_extid(extid_type, extid):
+def get_pub_data_by_extid(extid_type, extid):
     """."""
     url = '{0}/cgi-bin/rest/getpub_by_ID.cgi?{1}+{2}'.format(
         HOST, extid_type, extid)
     r = requests.get(url, headers=HEADERS)
-    return r
+    return validate_and_parse_xml_response(r)
 
 
-def get_xml_data_by_record_id(record_id):
+def get_pub_data_by_record_id(record_id):
     """."""
     url = '{0}/cgi-bin/rest/getpub_by_internal_ID.cgi?{1}'.format(
         HOST, record_id)
     r = requests.get(url, headers=HEADERS)
-    return r
+    return validate_and_parse_xml_response(r)
+
+
+def validate_and_parse_xml_response(request):
+    """Check if response is xml, if so parse, else raise error."""
+    try:
+        data = xmltodict.parse(request.content)
+    except XmlParseError:
+        raise Exception(request.content.strip())  # @todo find better exception
+    else:
+        return data
 
 
 # add holder support - class variable
@@ -78,7 +90,8 @@ def make_submission(submission_type, data, subject, mod_note, dry=True):
 
 
 def parse_submission_result(r):
-    result = xmltodict.parse(r.content)
+    """Check submission result to flag any failure"""
+    result = validate_and_parse_xml_response(r)
     status = result.get('ISFDB').get('Status')
     if status == 'FAIL':
         raise ConnectionError(result.get('ISFDB').get('Error'))
@@ -110,8 +123,7 @@ LIBRISXL_IDTYPE = 31
 
 def get_libris_data(libris_id):
     """."""
-    r = get_xml_data_by_extid('Libris', libris_id)
-    d = xmltodict.parse(r.content)
+    d = get_pub_data_by_extid('Libris', libris_id)
     if int(d['ISFDB']['Records']) != 1:
         if int(d['ISFDB']['Records']) > 1:
             raise ValueError('Non-unique Libris match')
