@@ -23,18 +23,21 @@ HEADERS = {
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
-    def __init__(self, headers=None, dry=True):
+    def __init__(self, headers=None, dry=True, holder=None):
         """
         Initialise an IsfdbSession.
 
         @param headers: Any custom request headers.
         @param dry: If session should be run in dry/debug mode. In this mode
             no submissions are made.
+        @param holder: A moderator user name to be set as holder for all
+            submissions.
         """
         self._browser = None
         self._credentials = None
         self.headers = headers or HEADERS
         self.dry = dry
+        self.holder = holder
 
     def __enter__(self):
         """Allow initialisation using 'with IsfdbSession() as x:'."""
@@ -168,11 +171,10 @@ class IsfdbSession(object):
         self.browser.get(url)
         return self.browser.page_source
 
-    # @todo: add holder support - class variable
     # @todo: add global counter to max out at 20
     def make_submission(
             self, submission_type: str, data: dict, subject: str,
-            mod_note: str):
+            mod_note: str, holder: str = None):
         """
         Make a submission to isfdb.org via the Web API.
 
@@ -186,8 +188,13 @@ class IsfdbSession(object):
             moderation queue. Should likely always be the title of the modified
             record.
         @param mod_note: A note to the moderators.
+        @param holder: A moderator user name to be set as holder for the
+            submission.
         @return: The resulting request.
         """
+        holder = holder or self.holder
+
+        # prepare payload
         payload = {
             'IsfdbSubmission': {
                 submission_type: {
@@ -198,6 +205,9 @@ class IsfdbSession(object):
                 }
             }
         }
+        if holder:
+            payload['IsfdbSubmission']['Holder'] = holder
+
         url = '{0}/cgi-bin/rest/submission.cgi'.format(HOST)
         if self.dry:
             print(IsfdbSession.xml_encode(payload))
@@ -221,8 +231,7 @@ class IsfdbSession(object):
         """Encode dict as xml with the appropriate encoding."""
         return xmltodict.unparse(payload, encoding='iso-8859-1', pretty=True)
 
-    # @todo: add holder support
-    def update_publication(self, old_data: dict, update: dict, mod_note: str):
+    def update_publication(self, old_data: dict, update: dict, **kwargs):
         """
         Update a single publication.
 
@@ -230,11 +239,11 @@ class IsfdbSession(object):
 
         @param old_data: The pre-existing publication data.
         @param update: The update to be made.
-        @param mod_note: A note to the moderators.
+        @param kwargs: Additional arguments directly feed to make_submission.
         """
         data = {
             'Record': old_data['Record'],
             **update
         }
         return self.make_submission(
-            'PubUpdate', data, old_data['Title'], mod_note)
+            'PubUpdate', data, old_data['Title'], **kwargs)
