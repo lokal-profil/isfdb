@@ -23,7 +23,9 @@ HEADERS = {
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
-    def __init__(self, headers=None, dry=True, mod_note=None, holder=None):
+    def __init__(
+            self, headers: dict = None, dry: bool = True, mod_note: str = None,
+            holder: str = None):
         """
         Initialise an IsfdbSession.
 
@@ -225,7 +227,7 @@ class IsfdbSession(object):
             return r
 
     def _parse_submission_result(self, request):
-        """Check submission result to flag any failure"""
+        """Check submission result to flag any failure."""
         result = IsfdbSession.validate_and_parse_xml_response(request)
         status = result.get('ISFDB').get('Status')
         if status == 'FAIL':
