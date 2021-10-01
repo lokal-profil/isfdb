@@ -15,7 +15,7 @@ MISSING_LIBRISXL_REPORT = 300
 # make generic by returning [(cols), ] or OrderedList({col_label: col_value})?
 # would then have to run soup on each row though
 # For this one return [ (id, name), ]
-def harvest_records_from_cleanup_report(isfdb, max=5):
+def harvest_records_from_cleanup_report(isfdb, max=5, debug=False):
     count = 0
     records = []
     soup = BeautifulSoup(
@@ -28,9 +28,11 @@ def harvest_records_from_cleanup_report(isfdb, max=5):
         if count >= max:
             break
     print('Found {0} records.'.format(len(records)))
-    # temp for debug
-    for id, name in records:
-        print('{0}\t{1}'.format(id, name))
+
+    if debug:
+        for id, name in records:
+            print('{0}\t{1}'.format(id, name))
+
     return records
 
 
@@ -84,11 +86,20 @@ def add_librisxl_id(isfdb, record_id):
     return isfdb.update_publication(old_data, update, mod_note)
 
 
+def run():
+    isfdb = IsfdbSession()
+    print('===Harvest records===')
+    records = harvest_records_from_cleanup_report(isfdb, max=20)
+    for record_id, name in records:
+        add_librisxl_id(isfdb, record_id)
+        print('Added librisxl to: ({0}){1}'.format(record_id, name))
+
+
 # drop
 def test():
     isfdb = IsfdbSession()
     print('===Harvest records===')
-    #harvest_records_from_cleanup_report(isfdb)
+    harvest_records_from_cleanup_report(isfdb, debug=True)
     print('===Update an entry new===')
     add_librisxl_id(isfdb, 645691)
 
