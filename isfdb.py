@@ -28,8 +28,8 @@ class IsfdbSession(object):
         """
         Initialise an IsfdbSession.
 
-        @param headers: request headers
-        @param dry: if session should be run in dry/debug mode. In this mode
+        @param headers: Any custom request headers.
+        @param dry: If session should be run in dry/debug mode. In this mode
             no submissions are made.
         """
         self._browser = None
@@ -132,8 +132,8 @@ class IsfdbSession(object):
         For external id type names see:
         http://www.isfdb.org/cgi-bin/adv_identifier_search.cgi
 
-        @param extid_type: The name of the external identifier
-        @param ext_id: The value of the identifier
+        @param extid_type: The name of the external identifier.
+        @param ext_id: The value of the identifier.
         @return: The complete API response (parsed as a dict) including any
             preamble.
         """
@@ -177,13 +177,13 @@ class IsfdbSession(object):
         than submitted.
 
         @param submission_type: The submission type as defined at
-            http://www.isfdb.org/wiki/index.php/Data_Submission_Formats
+            http://www.isfdb.org/wiki/index.php/Data_Submission_Formats .
         @param data: The submission payload.
         @param subject: The label by which the submission is known in the
             moderation queue. Should likely always be the title of the modified
             record.
         @param mod_note: A note to the moderators.
-        @return: the resulting request
+        @return: The resulting request.
         """
         payload = {
             'IsfdbSubmission': {
