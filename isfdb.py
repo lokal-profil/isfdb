@@ -17,10 +17,11 @@ HEADERS = {
 }
 
 
-# Add max_submissions = 20 and make_submission should respect this
-# Add a get_pending_edits_number
-# Add mechanism for closing session and killing browser (see commented out)
-# Make browser headless (on dry=False)
+# @todo: Add max_submissions = 20 and make_submission should respect this
+# @todo: Add a get_pending_edits_number
+# @todo: Add mechanism for closing session and killing browser
+#        (see commented out)
+# @todo: Make browser headless (on dry=False)
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
@@ -55,6 +56,7 @@ class IsfdbSession(object):
     # if adding web password then validation needs to change as does passing
     # credentials straight to make_submission
     # can then use more sane credentials labels
+    # @todo: support password in credentials file
     @staticmethod
     def _load_credentials():
         """Load API credentials from .credentials.json file."""
@@ -73,6 +75,7 @@ class IsfdbSession(object):
 
     # to run headless (if debug=False) see
     # https://stackoverflow.com/questions/46753393
+    # @todo: support headless
     def _initialise_browser(self):
         """
         Create a selenium browser logged in to isfdb.org.
