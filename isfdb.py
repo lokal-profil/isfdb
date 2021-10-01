@@ -60,16 +60,12 @@ class IsfdbSession(object):
             self._credentials = IsfdbSession._load_credentials()
         return self._credentials
 
-    # if adding web password then validation needs to change as does passing
-    # credentials straight to make_submission
-    # can then use more sane credentials labels
-    # @todo: support password in credentials file
     @staticmethod
     def _load_credentials():
         """Load API credentials from .credentials.json file."""
         with open('.credentials.json') as f:
             data = json.load(f)
-            if not set(data.keys()) == set(['Submitter', 'LicenseKey']):
+            if not set(['username', 'api_key']).issubset(set(data.keys())):
                 raise ValueError('Incorrectly formatted credentials file')
         return data
 
@@ -106,7 +102,7 @@ class IsfdbSession(object):
         browser = browser or self._browser
 
         # load the necessary credentials
-        username = self.credentials.get('Submitter')
+        username = self.credentials.get('username')
         password = self.credentials.get('password')
         if not username:
             username = input('Username: ')
@@ -199,6 +195,10 @@ class IsfdbSession(object):
         """
         holder = holder or self.holder
         mod_note = mod_note or self.mod_note
+        credentials = {
+            'Submitter': self.credentials.get('username'),
+            'LicenseKey': self.credentials.get('api_key')
+        }
 
         # prepare payload
         payload = {
@@ -206,7 +206,7 @@ class IsfdbSession(object):
                 submission_type: {
                     'Subject': subject,
                     **data,
-                    **self.credentials
+                    **credentials
                 }
             }
         }
