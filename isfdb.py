@@ -23,20 +23,23 @@ HEADERS = {
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
-    def __init__(self, headers=None, dry=True, holder=None):
+    def __init__(self, headers=None, dry=True, mod_note=None, holder=None):
         """
         Initialise an IsfdbSession.
 
         @param headers: Any custom request headers.
         @param dry: If session should be run in dry/debug mode. In this mode
             no submissions are made.
-        @param holder: A moderator user name to be set as holder for all
+        @param mod_note: A note to pass to the moderators with every
+            submission.
+        @param holder: A moderator user name to be set as holder for every
             submissions.
         """
         self._browser = None
         self._credentials = None
         self.headers = headers or HEADERS
         self.dry = dry
+        self.mod_note = mod_note
         self.holder = holder
 
     def __enter__(self):
@@ -174,7 +177,7 @@ class IsfdbSession(object):
     # @todo: add global counter to max out at 20
     def make_submission(
             self, submission_type: str, data: dict, subject: str,
-            mod_note: str, holder: str = None):
+            mod_note: str = None, holder: str = None):
         """
         Make a submission to isfdb.org via the Web API.
 
@@ -193,13 +196,13 @@ class IsfdbSession(object):
         @return: The resulting request.
         """
         holder = holder or self.holder
+        mod_note = mod_note or self.mod_note
 
         # prepare payload
         payload = {
             'IsfdbSubmission': {
                 submission_type: {
                     'Subject': subject,
-                    'ModNote': mod_note,
                     **data,
                     **self.credentials
                 }
@@ -207,6 +210,8 @@ class IsfdbSession(object):
         }
         if holder:
             payload['IsfdbSubmission']['Holder'] = holder
+        if mod_note:
+            payload['IsfdbSubmission'][submission_type]['ModNote'] = mod_note
 
         url = '{0}/cgi-bin/rest/submission.cgi'.format(HOST)
         if self.dry:

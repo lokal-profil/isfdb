@@ -53,7 +53,6 @@ def add_librisxl_id(isfdb, record_id):
           IDtype
           IDvalue
     """
-    mod_note = 'Adding LibrisXL ID based on Libris ID (by api)'
     # get entry to ensure it exists and to get remaining external-ids
     record_result = isfdb.get_pub_data_by_record_id(record_id)
     old_data = record_result['ISFDB']['Publications']['Publication']
@@ -81,12 +80,13 @@ def add_librisxl_id(isfdb, record_id):
 
     # package as update
     update = {'External_IDs': {'External_ID': external_id}}
-    return isfdb.update_publication(old_data, update, mod_note)
+    return isfdb.update_publication(old_data, update)
 
 
 def run():
     """Add up to 20 LibrisXL ids to publications listed in cleanup report."""
-    with IsfdbSession(dry=False) as isfdb:
+    mod_note = 'Adding LibrisXL ID based on Libris ID (by api)'
+    with IsfdbSession(dry=False, mod_note=mod_note) as isfdb:
         records = harvest_records_from_cleanup_report(isfdb, max=20)
         for record_id, name in records:
             add_librisxl_id(isfdb, record_id)
