@@ -86,22 +86,22 @@ def add_librisxl_id(isfdb, record_id):
 
 def run():
     """Add up to 20 LibrisXL ids to publications listed in cleanup report."""
-    isfdb = IsfdbSession(dry=False)
-    print('===Harvest records===')
-    records = harvest_records_from_cleanup_report(isfdb, max=20)
-    for record_id, name in records:
-        add_librisxl_id(isfdb, record_id)
-        print('Added librisxl to: ({0}){1}'.format(record_id, name))
+    with IsfdbSession(dry=False) as isfdb:
+        records = harvest_records_from_cleanup_report(isfdb, max=20)
+        for record_id, name in records:
+            add_librisxl_id(isfdb, record_id)
+            print('Added librisxl to: ({0}){1}'.format(record_id, name))
+        print('Done for now')
 
 
 # drop
 def test():
     """Test function to validate methods."""
-    isfdb = IsfdbSession()
-    print('===Harvest records===')
-    harvest_records_from_cleanup_report(isfdb, debug=True)
-    print('===Update an entry new===')
-    add_librisxl_id(isfdb, 645691)
+    with IsfdbSession() as isfdb:
+        print('===Harvest records===')
+        harvest_records_from_cleanup_report(isfdb, debug=True)
+        print('===Update an entry new===')
+        add_librisxl_id(isfdb, 645691)
 
 
 # drop

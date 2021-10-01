@@ -19,8 +19,6 @@ HEADERS = {
 
 # @todo: Add max_submissions = 20 and make_submission should respect this
 # @todo: Add a get_pending_edits_number
-# @todo: Add mechanism for closing session and killing browser
-#        (see commented out)
 # @todo: Make browser headless (on dry=False)
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
@@ -38,13 +36,14 @@ class IsfdbSession(object):
         self.headers = headers or HEADERS
         self.dry = dry
 
-    # def __enter__(self):
-    #     return self
-    #
-    # def __exit__(self):
-    #     """Ensure no (headless) browsers are left after use."""
-    #     if self._browser:
-    #         self._browser.quit()
+    def __enter__(self):
+        """Allow initialisation using 'with IsfdbSession() as x:'."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Ensure no (headless) browsers are left after use."""
+        if self._browser:
+            self._browser.quit()
 
     @property
     def credentials(self):
