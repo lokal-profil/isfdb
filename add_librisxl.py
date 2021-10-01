@@ -11,8 +11,6 @@ LIBRIS_IDTYPE = 30
 LIBRISXL_IDTYPE = 31
 MISSING_LIBRISXL_REPORT = 300
 
-# rename file something with libris
-
 
 # make generic by returning [(cols), ] or OrderedList({col_label: col_value})?
 # would then have to run soup on each row though
