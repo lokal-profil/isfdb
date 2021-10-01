@@ -162,12 +162,24 @@ class IsfdbSession(object):
         return self.browser.page_source
 
     # @todo: add holder support - class variable
-    # @todo: add proper docstring
-    def make_submission(self, submission_type, data, subject, mod_note):
+    # @todo: add global counter to max out at 20
+    def make_submission(
+            self, submission_type: str, data: dict, subject: str,
+            mod_note: str):
         """
-        data is dict, subject is string, submissionType is string.
-        subject might have a default value
-        Add global counter to max out at 20
+        Make a submission to isfdb.org via the Web API.
+
+        If the 'dry' class parameter is set then request will be printed rather
+        than submitted.
+
+        @param submission_type: The submission type as defined at
+            http://www.isfdb.org/wiki/index.php/Data_Submission_Formats
+        @param data: The submission payload.
+        @param subject: The label by which the submission is known in the
+            moderation queue. Should likely always be the title of the modified
+            record.
+        @param mod_note: A note to the moderators.
+        @return: the resulting request
         """
         payload = {
             'IsfdbSubmission': {
