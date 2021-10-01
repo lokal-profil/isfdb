@@ -126,12 +126,17 @@ class IsfdbSession(object):
             browser.quit()
             raise ConnectionError(msg)  # @todo: more appropriate exception
 
-    def get_pub_data_by_external_id(self, extid_type, ext_id):
+    def get_pub_data_by_external_id(self, extid_type: str, ext_id: int):
         """
         Get all publication records matching a provided external identifier.
 
         For external id type names see:
         http://www.isfdb.org/cgi-bin/adv_identifier_search.cgi
+
+        @param extid_type: The name of the external identifier
+        @param ext_id: The value of the identifier
+        @return: The complete API response (parsed as a dict) including any
+            preamble.
         """
         url = '{0}/cgi-bin/rest/getpub_by_ID.cgi?{1}+{2}'.format(
             HOST, extid_type, ext_id)
