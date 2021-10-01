@@ -219,13 +219,15 @@ class IsfdbSession(object):
         return xmltodict.unparse(payload, encoding='iso-8859-1', pretty=True)
 
     # @todo: add holder support
-    # @todo: proper docstring
-    def update_publication(self, old_data, update, mod_note):
+    def update_publication(self, old_data: dict, update: dict, mod_note: str):
         """
-        Can make this only support additions for now?
-        Expect data to be a dict. build xml_payload later
+        Update a single publication.
 
-        http://www.isfdb.org/wiki/index.php/XML:PubUpdate
+        See http://www.isfdb.org/wiki/index.php/XML:PubUpdate for more info.
+
+        @param old_data: The pre-existing publication data.
+        @param update: The update to be made.
+        @param mod_note: A note to the moderators.
         """
         data = {
             'Record': old_data['Record'],
