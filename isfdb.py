@@ -10,6 +10,7 @@ from xml.parsers.expat import ExpatError as XmlParseError
 import requests
 import xmltodict
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 
 HOST = 'http://www.isfdb.org'
 HEADERS = {
@@ -19,7 +20,6 @@ HEADERS = {
 
 # @todo: Add max_submissions = 20 and make_submission should respect this
 # @todo: Add a get_pending_edits_number
-# @todo: Make browser headless (on dry=False)
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
@@ -72,18 +72,19 @@ class IsfdbSession(object):
             self._browser = self._initialise_browser()
         return self._browser
 
-    # to run headless (if debug=False) see
-    # https://stackoverflow.com/questions/46753393
-    # @todo: support headless
     def _initialise_browser(self):
         """
-        Create a selenium browser logged in to isfdb.org.
+        Create a selenium webdriver (Firefox) logged in to isfdb.org.
 
-        This currently requires geckodriver to be installed and will open a
-        separate browser window.
+        This currently requires geckodriver to be installed.
+
+        If the 'dry' class variable is set the resulting browser window will be
+        visible, otherwise the webdriver is made headless.
         """
         # required geckodriver
-        browser = webdriver.Firefox()
+        options = Options()
+        options.headless = not self.dry
+        browser = webdriver.Firefox(options=options)
         self.log_in(browser)
         return browser
 
