@@ -1,7 +1,4 @@
-"""
-Harvest items needing librisxl id.
-
-"""
+"""Add LibrisXL ids to publications with only Libris ids."""
 import requests
 from bs4 import BeautifulSoup
 
@@ -12,10 +9,8 @@ LIBRISXL_IDTYPE = 31
 MISSING_LIBRISXL_REPORT = 300
 
 
-# make generic by returning [(cols), ] or OrderedList({col_label: col_value})?
-# would then have to run soup on each row though
-# For this one return [ (id, name), ]
 def harvest_records_from_cleanup_report(isfdb, max=5, debug=False):
+    """Parse the cleanup report to isolate affected publication records."""
     count = 0
     records = []
     soup = BeautifulSoup(
@@ -37,6 +32,7 @@ def harvest_records_from_cleanup_report(isfdb, max=5, debug=False):
 
 
 def get_librisxl_id(libris_id):
+    """Lookup LibrisXL id by resolving Libris id in XL interface."""
     clearing_url = 'https://libris.kb.se/resource/bib/{0}'.format(libris_id)
     r = requests.head(clearing_url, allow_redirects=True)
     resolved_url = r.url
@@ -45,9 +41,12 @@ def get_librisxl_id(libris_id):
     return resolved_url.rpartition('/')[2].partition('#')[0]
 
 
-# @todo: rename
 def add_librisxl_id(isfdb, record_id):
     """
+    Add the Libris XL id to a publication record.
+
+    Skips entries already containing a LibrisXL id or multiple Libris ids.
+
     Structure of external-id part is:
     External_IDs
        External_ID
@@ -59,9 +58,8 @@ def add_librisxl_id(isfdb, record_id):
     record_result = isfdb.get_pub_data_by_record_id(record_id)
     old_data = record_result['ISFDB']['Publications']['Publication']
 
-    # extract all pre-existing external ids
-    # extract pre existing identifiers and check for edge cases
-    # not that submission format does not include the IDtypeName key
+    # extract all pre-existing identifiers and check for edge cases
+    # note that submission format does not include the IDtypeName key
     external_id = []
     libris_id = None
     for entry in old_data.get('External_IDs').get('External_ID'):
@@ -87,7 +85,8 @@ def add_librisxl_id(isfdb, record_id):
 
 
 def run():
-    isfdb = IsfdbSession()
+    """Add up to 20 LibrisXL ids to publications listed in cleanup report."""
+    isfdb = IsfdbSession(dry=False)
     print('===Harvest records===')
     records = harvest_records_from_cleanup_report(isfdb, max=20)
     for record_id, name in records:
@@ -97,6 +96,7 @@ def run():
 
 # drop
 def test():
+    """Test function to validate methods."""
     isfdb = IsfdbSession()
     print('===Harvest records===')
     harvest_records_from_cleanup_report(isfdb, debug=True)
