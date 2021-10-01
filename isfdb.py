@@ -24,10 +24,9 @@ HEADERS = {
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
-    # @todo: proper docstring
     def __init__(self, headers=None, dry=True):
         """
-        ...
+        Initialise an IsfdbSession.
 
         @param headers: request headers
         @param dry: if session should be run in dry/debug mode. In this mode
