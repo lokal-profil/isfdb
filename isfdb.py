@@ -69,34 +69,51 @@ class IsfdbSession(object):
     def browser(self):
         """Browser logged into isfdb.org providing pages not in API."""
         if not self._browser:
-            self._browser = self._log_in()
+            self._browser = self._initialise_browser()
         return self._browser
 
     # to run headless (if debug=False) see
     # https://stackoverflow.com/questions/46753393
-    def _log_in(self):
+    def _initialise_browser(self):
         """
         Create a selenium browser logged in to isfdb.org.
 
         This currently requires geckodriver to be installed and will open a
         separate browser window.
         """
+        # required geckodriver
+        browser = webdriver.Firefox()
+        self.log_in(browser)
+        return browser
+
+    def log_in(self, browser=None):
+        """
+        Log into isfdb.org via browser.
+
+        @param browser: Selenium webdriver to log in with in case the internal
+            one is not prepared yet.
+        """
+        browser = browser or self._browser
+
+        # load the necessary credentials
         username = self.credentials.get('Submitter')
         password = self.credentials.get('password')
         if not username:
             username = input('Username: ')
         if not password:
             password = getpass()
-        # required geckodriver
-        browser = webdriver.Firefox()
-        # load login page
+
+        # load and fill out login page
         url = '{0}/cgi-bin/dologin.cgi?0+0'.format(HOST)
         browser.get(url)
         browser.find_element_by_name('login').send_keys(username)
         browser.find_element_by_name('password').send_keys(password)
         browser.find_element_by_xpath("//input[@value='submit']").click()
+
         # wait for login to complete
         browser.implicitly_wait(3)
+
+        # verify login was successful
         result = (
             browser.find_element_by_id('statusbar')
             .find_element_by_tag_name('h2')
@@ -107,9 +124,7 @@ class IsfdbSession(object):
                 .find_element_by_tag_name('h2')
                 .text)
             browser.quit()
-            raise ConnectionError(msg)  # @todo: more appropriate exception?
-        else:
-            return browser
+            raise ConnectionError(msg)  # @todo: more appropriate exception
 
     def get_pub_data_by_external_id(self, extid_type, ext_id):
         """
