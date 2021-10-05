@@ -228,7 +228,7 @@ class IsfdbSession(object):
 
     def _parse_submission_result(self, request):
         """Check submission result to flag any failure."""
-        result = IsfdbSession.validate_and_parse_xml_response(request)
+        result = IsfdbSession._validate_and_parse_xml_response(request)
         status = result.get('ISFDB').get('Status')
         if status == 'FAIL':
             raise ConnectionError(result.get('ISFDB').get('Error'))
