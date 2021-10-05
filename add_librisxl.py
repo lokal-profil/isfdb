@@ -61,7 +61,7 @@ def add_librisxl_id(isfdb, record_id):
     # note that submission format does not include the IDtypeName key
     external_id = []
     libris_id = None
-    for entry in old_data.get('External_IDs').get('External_ID'):
+    for entry in listify(old_data.get('External_IDs').get('External_ID')):
         if int(entry.get('IDtype')) == LIBRISXL_IDTYPE:
             raise ValueError('Publication already has LibrisXL ID.')
         elif int(entry.get('IDtype')) == LIBRIS_IDTYPE:
@@ -81,6 +81,21 @@ def add_librisxl_id(isfdb, record_id):
     # package as update
     update = {'External_IDs': {'External_ID': external_id}}
     return isfdb.update_publication(old_data, update)
+
+
+def listify(value):
+    """
+    Turn the given value, which might or might not be a list, into a list.
+
+    @param value: The value to listify
+    @rtype: list|None
+    """
+    if value is None:
+        return None
+    elif isinstance(value, list):
+        return value
+    else:
+        return [value, ]
 
 
 def run():
@@ -106,4 +121,4 @@ def test():
 
 # drop
 if __name__ == "__main__":
-    test()
+    run()
