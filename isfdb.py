@@ -19,7 +19,6 @@ HEADERS = {
 
 
 # @todo: Add max_submissions = 20 and make_submission should respect this
-# @todo: Add a get_pending_edits_number
 class IsfdbSession(object):
     """An isfdb.org session be it via API or browser."""
 
@@ -169,6 +168,12 @@ class IsfdbSession(object):
     def get_cleanup_report(self, report_id):
         """Return the html contents of a cleanup report."""
         url = '{0}/cgi-bin/edit/cleanup_report.cgi?{1}'.format(HOST, report_id)
+        self.browser.get(url)
+        return self.browser.page_source
+
+    def get_pending_edits(self):
+        """Return the html contents of the pending edits list."""
+        url = '{0}/cgi-bin/myrecent.cgi?0+N'.format(HOST)
         self.browser.get(url)
         return self.browser.page_source
 

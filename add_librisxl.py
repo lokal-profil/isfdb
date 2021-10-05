@@ -1,4 +1,6 @@
 """Add LibrisXL ids to publications with only Libris ids."""
+from collections import namedtuple
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -98,18 +100,90 @@ def listify(value):
         return [value, ]
 
 
+def parse_pending(isfdb):
+    """
+    Parse the My Pending Edits page.
+
+    If no pending edits then contents are:
+    <div id="main">
+       ... text about current global queue.
+       <h3>No submissions present</h3>
+    </div>
+
+    If pending edits then contents are:
+    <div id="main">
+       ...
+       <table class="generic_table">
+           <tbody>
+               <tr>[table head]</tr>
+               <tr>[entry]</tr>
+               ...
+           </tbody>
+       </table>
+    </div>
+
+    Column order is:
+    (Submission, Type, Time Submitted, Submitter, Holder, Affected Record, Cancel)  # noqa: E501
+    """
+    pending_edits = []
+    soup = BeautifulSoup(
+        isfdb.get_pending_edits(),
+        features='html5lib')
+    table = soup.find(id='main').find('table')
+
+    # if no pending edits
+    if not table:
+        return pending_edits
+
+    # if pending edits
+    PendingSubmission = namedtuple(
+        'PendingSubmission', ['id', 'type', 'name', 'record'])
+
+    for row in table.find_all('tr')[1:]:  # skip header row
+        # when new records are created Affected Record is not linked
+        record_id = None
+        affected_record = row.find_all('td')[5]
+        record_link = affected_record.find('a')
+        if record_link:
+            record_id = record_link.get('href').split('?')[1]
+        pending_edits.append(
+            PendingSubmission(
+                row.find('td').text,
+                row.find_all('td')[1].text,
+                affected_record.text,
+                record_id
+            )
+        )
+
+    print('You have {0} pending edits.'.format(len(pending_edits)))
+
+    return pending_edits
+
+
 def run():
     """Add up to 20 LibrisXL ids to publications listed in cleanup report."""
     mod_note = 'Adding LibrisXL ID based on Libris ID (by api)'
     with IsfdbSession(dry=False, mod_note=mod_note) as isfdb:
+        pending_edits = parse_pending(isfdb)
         records = harvest_records_from_cleanup_report(isfdb, max=20)
         for record_id, name in records:
+            if record_id in [edit.record for edit in pending_edits]:
+                print('Skipping due to pending: ({0}){1}'.format(record_id, name))
+                continue
+
             add_librisxl_id(isfdb, record_id)
             print('Added librisxl to: ({0}){1}'.format(record_id, name))
         print('Done for now')
 
 
 # drop
+def debug_pending_edits(isfdb):
+    """Render pending edits results for debugging."""
+    for edit in parse_pending(isfdb):
+        print('{0} ({3})\t[{2}]\t{1}'.format(
+            edit.id, edit.name, edit.record, edit.type))
+
+
 def test():
     """Test function to validate methods."""
     with IsfdbSession() as isfdb:
@@ -117,6 +191,8 @@ def test():
         harvest_records_from_cleanup_report(isfdb, debug=True)
         print('===Update an entry new===')
         add_librisxl_id(isfdb, 645691)
+        print('===Pending edits===')
+        debug_pending_edits(isfdb)
 
 
 # drop
