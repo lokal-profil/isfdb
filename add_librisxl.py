@@ -11,26 +11,19 @@ LIBRISXL_IDTYPE = 31
 MISSING_LIBRISXL_REPORT = 300
 
 
-def harvest_records_from_cleanup_report(isfdb, max=5, debug=False):
+def cleanup_report_records_generator(isfdb):
     """Parse the cleanup report to isolate affected publication records."""
-    count = 0
-    records = []
     soup = BeautifulSoup(
         isfdb.get_cleanup_report(MISSING_LIBRISXL_REPORT),
         features='html5lib')
-    for link in soup.find(id='main2').find_all('a'):
+
+    record_links = soup.find(id='main2').find_all('a')
+    print('Found {0} records.'.format(len(record_links)))
+
+    Publication = namedtuple('Publication', ['id', 'name'])
+    for link in record_links:
         record_id = link.get('href').split('?')[1]
-        records.append((record_id, link.text))
-        count += 1
-        if count >= max:
-            break
-    print('Found {0} records.'.format(len(records)))
-
-    if debug:
-        for id, name in records:
-            print('{0}\t{1}'.format(id, name))
-
-    return records
+        yield Publication(record_id, link.text)
 
 
 def get_librisxl_id(libris_id):
@@ -160,27 +153,35 @@ def parse_pending(isfdb):
     return pending_edits
 
 
-def run():
+def run(max=20):
     """Add up to 20 LibrisXL ids to publications listed in cleanup report."""
     mod_note = 'Adding LibrisXL ID based on Libris ID (by api)'
+    count = 0
     with IsfdbSession(dry=False, mod_note=mod_note) as isfdb:
         pending_edits = parse_pending(isfdb)
-        records = harvest_records_from_cleanup_report(isfdb, max=20)
-        for record_id, name in records:
-            if record_id in [edit.record for edit in pending_edits]:
+        for publication in cleanup_report_records_generator(isfdb):
+            if count >= max:
+                break
+
+            if publication.id in [edit.record for edit in pending_edits]:
                 print('Skipping due to pending: ({0}){1}'.format(
-                    record_id, name))
+                    publication.id, publication.name))
+                count += 1  # pending edits should still count towards max
                 continue
+
             try:
-                add_librisxl_id(isfdb, record_id)
+                add_librisxl_id(isfdb, publication.id)
             except ValueError as e:
                 print('Skipping due to "{2}": ({0}){1}'.format(
-                    record_id, name, e))
-            print('Added librisxl to: ({0}){1}'.format(record_id, name))
+                    publication.id, publication.name, e))
+                continue
+            print('Added librisxl to: ({0}){1}'.format(
+                publication.id, publication.name))
+            count += 1
         print('Done for now')
 
 
-# drop
+# drop tests below this
 def debug_pending_edits(isfdb):
     """Render pending edits results for debugging."""
     for edit in parse_pending(isfdb):
@@ -188,11 +189,21 @@ def debug_pending_edits(isfdb):
             edit.id, edit.name, edit.record, edit.type))
 
 
+def debug_cleanup_report_records_generator(isfdb, max=5):
+    """Render cleanup report results for debugging."""
+    count = 0
+    for publication in cleanup_report_records_generator(isfdb):
+        print('{0}\t{1}'.format(publication.id, publication.name))
+        count += 1
+        if count >= max:
+            break
+
+
 def test():
     """Test function to validate methods."""
     with IsfdbSession() as isfdb:
         print('===Harvest records===')
-        harvest_records_from_cleanup_report(isfdb, debug=True)
+        debug_cleanup_report_records_generator(isfdb)
         print('===Update an entry new===')
         add_librisxl_id(isfdb, 645691)
         print('===Pending edits===')
