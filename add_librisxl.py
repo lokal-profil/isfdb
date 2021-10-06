@@ -168,10 +168,14 @@ def run():
         records = harvest_records_from_cleanup_report(isfdb, max=20)
         for record_id, name in records:
             if record_id in [edit.record for edit in pending_edits]:
-                print('Skipping due to pending: ({0}){1}'.format(record_id, name))
+                print('Skipping due to pending: ({0}){1}'.format(
+                    record_id, name))
                 continue
-
-            add_librisxl_id(isfdb, record_id)
+            try:
+                add_librisxl_id(isfdb, record_id)
+            except ValueError as e:
+                print('Skipping due to "{2}": ({0}){1}'.format(
+                    record_id, name, e))
             print('Added librisxl to: ({0}){1}'.format(record_id, name))
         print('Done for now')
 
