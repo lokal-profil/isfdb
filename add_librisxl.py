@@ -31,7 +31,7 @@ def get_librisxl_id(libris_id):
     clearing_url = 'https://libris.kb.se/resource/bib/{0}'.format(libris_id)
     r = requests.head(clearing_url, allow_redirects=True)
     resolved_url = r.url
-    if r.status_code != 500:
+    if r.status_code != 200:
         raise ValueError('Unable to get LibrisXL id')
     return resolved_url.rpartition('/')[2].partition('#')[0]
 
